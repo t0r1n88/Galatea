@@ -10,8 +10,10 @@ import time
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
+
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    """ Get absolute path to resource, works for dev and for PyInstaller
+    Функция чтобы логотип отображался"""
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
@@ -65,7 +67,6 @@ def select_files_data_xlsx():
     files_data_xlsx = filedialog.askopenfilenames(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
-
 def processing_data():
     """
     Фугкция для обработки данных
@@ -87,7 +88,7 @@ if __name__ == '__main__':
 
     # Создаем вкладку обработки данных для Приложения 6
     tab_report_6 = ttk.Frame(tab_control)
-    tab_control.add(tab_report_6, text='Приложение №6')
+    tab_control.add(tab_report_6, text='Скрипт №1')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание образовательных программ
     # Создаем метку для описания назначения программы
