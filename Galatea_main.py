@@ -15,7 +15,7 @@ def processing_data(path_to_file,name_file):
     """
     df = pd.read_excel(f'{path_to_file}{name_file}')
 
-    df.to_excel('output/Result.xlsx',index=False)
+    df.to_excel('c:/Users/1/PycharmProjects/Galatea/output/Result.xlsx',index=False)
 
 
 # path_folder_data = 'data/'
