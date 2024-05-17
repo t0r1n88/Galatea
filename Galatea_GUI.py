@@ -10,6 +10,9 @@ import time
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
+"""
+Служебные функции в том числе для работы графического интерфейса
+"""
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller
@@ -23,105 +26,258 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def select_folder_data():
+def make_textmenu(root):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    # эта штука делает меню
+    global the_menu
+    the_menu = Menu(root, tearoff=0)
+    the_menu.add_command(label="Вырезать")
+    the_menu.add_command(label="Копировать")
+    the_menu.add_command(label="Вставить")
+    the_menu.add_separator()
+    the_menu.add_command(label="Выбрать все")
+
+
+def callback_select_all(event):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    # select text after 50ms
+    window.after(50, lambda: event.widget.select_range(0, 'end'))
+
+
+def show_textmenu(event):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    e_widget = event.widget
+    the_menu.entryconfigure("Вырезать", command=lambda: e_widget.event_generate("<<Cut>>"))
+    the_menu.entryconfigure("Копировать", command=lambda: e_widget.event_generate("<<Copy>>"))
+    the_menu.entryconfigure("Вставить", command=lambda: e_widget.event_generate("<<Paste>>"))
+    the_menu.entryconfigure("Выбрать все", command=lambda: e_widget.select_range(0, 'end'))
+    the_menu.tk.call("tk_popup", the_menu, event.x_root, event.y_root)
+
+
+def on_scroll(*args):
+    canvas.yview(*args)
+
+def set_window_size(window):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    # Устанавливаем размер окна в 80% от ширины и высоты экрана
+    if screen_width >= 3840:
+        width = int(screen_width * 0.2)
+    elif screen_width >= 2560:
+        width = int(screen_width * 0.31)
+    elif screen_width >= 1920:
+        width = int(screen_width * 0.41)
+    elif screen_width >= 1600:
+        width = int(screen_width * 0.5)
+    elif screen_width >= 1280:
+        width = int(screen_width * 0.62)
+    elif screen_width >= 1024:
+        width = int(screen_width * 0.77)
+    else:
+        width = int(screen_width * 1)
+
+    height = int(screen_height * 0.8)
+
+    # Рассчитываем координаты для центрирования окна
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+
+    # Устанавливаем размер и положение окна
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+
+
+
+
+def select_template_folder_data():
     """
     Функция для выбора папки c данными
     :return:
     """
-    global path_folder_data
-    path_folder_data = filedialog.askdirectory()
+    global path_template_folder_data
+    path_template_folder_data = filedialog.askdirectory()
 
-def select_end_folder():
+def select_template_end_folder():
     """
     Функция для выбора конечной папки куда будут складываться итоговые файлы
     :return:
     """
-    global path_to_end_folder
-    path_to_end_folder = filedialog.askdirectory()
+    global path_to_template_end_folder
+    path_to_template_end_folder = filedialog.askdirectory()
 
-def select_file_docx():
+def select_template_file_docx():
     """
     Функция для выбора файла Word
     :return: Путь к файлу шаблона
     """
-    global file_docx
-    file_docx = filedialog.askopenfilename(
+    global file_template_docx
+    file_template_docx = filedialog.askopenfilename(
         filetypes=(('Word files', '*.docx'), ('all files', '*.*')))
 
-def select_file_data_xlsx():
+def select_singe_file_template_data_xlsx():
     """
     Функция для выбора файла с данными на основе которых будет генерироваться документ
     :return: Путь к файлу с данными
     """
-    global file_data_xlsx
+    global singe_file_template_data_xlsx
     # Получаем путь к файлу
-    file_data_xlsx = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+    singe_file_template_data_xlsx = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
-def select_files_data_xlsx():
+def select_many_files_template_data_xlsx():
     """
     Функция для выбора нескоьких файлов с данными на основе которых будет генерироваться документ
     :return: Путь к файлу с данными
     """
-    global files_data_xlsx
-    # Получаем путь файлы
-    files_data_xlsx = filedialog.askopenfilenames(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+    global many_files_template_data_xlsx
+    # Получаем список с файлами
+    many_files_template_data_xlsx = filedialog.askopenfilenames(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
-def processing_data():
+def processing_template():
     """
-    Фугкция для обработки данных
+    Точка входа в обработку данных
     :return:
     """
-    pass
+    try:
+        # получаем данные из чекбокса
+        checkbox_entry = group_rb_type_template.get()
+        # получаем данные из поля ввода
+        string_entry = entry_template_string_data.get()
+    except NameError:
+        print('error')
 
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('ЦОПП Бурятия')
-    window.geometry('700x860')
-    window.resizable(False, False)
+    window.title('Веста Обработка таблиц и создание документов ver 1.50')
+    # Устанавливаем размер и положение окна
+    set_window_size(window)
+    # window.geometry('774x760')
+    # window.geometry('980x910+700+100')
+    window.resizable(True, True)
+    # Добавляем контекстное меню в поля ввода
+    make_textmenu(window)
 
+    # Создаем вертикальный скроллбар
+    scrollbar = Scrollbar(window, orient="vertical")
 
-    # Создаем объект вкладок
+    # Создаем холст
+    canvas = Canvas(window, yscrollcommand=scrollbar.set)
+    canvas.pack(side="left", fill="both", expand=True)
 
-    tab_control = ttk.Notebook(window)
+    # Привязываем скроллбар к холсту
+    scrollbar.config(command=canvas.yview)
 
-    # Создаем вкладку обработки данных для Приложения 6
-    tab_report_6 = ttk.Frame(tab_control)
-    tab_control.add(tab_report_6, text='Скрипт №1')
-    tab_control.pack(expand=1, fill='both')
-    # Добавляем виджеты на вкладку Создание образовательных программ
-    # Создаем метку для описания назначения программы
-    lbl_hello = Label(tab_report_6,
-                      text='Центр опережающей профессиональной подготовки Республики Бурятия')
-    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+    # Создаем ноутбук (вкладки)
+    tab_control = ttk.Notebook(canvas)
+
+    """
+    Создаем вкладку 
+    """
+    tab_template = ttk.Frame(tab_control)
+    tab_control.add(tab_template, text='Вкладка 1')
+
+    template_frame_description = LabelFrame(tab_template)
+    template_frame_description.pack()
+
+    lbl_hello_template = Label(template_frame_description,
+                                   text='Центр опережающей профессиональной подготовки Республики Бурятия', width=60)
+    lbl_hello_template.pack(side=LEFT, anchor=N, ipadx=25, ipady=10)
 
     # Картинка
-    path_to_img = resource_path('logo.png')
+    path_to_img_template = resource_path('logo.png')
+    img_template = PhotoImage(file=path_to_img_template)
+    Label(template_frame_description,
+          image=img_template, padx=10, pady=10
+          ).pack(side=LEFT, anchor=E, ipadx=5, ipady=5)
 
-    img = PhotoImage(file=path_to_img)
-    Label(tab_report_6,
-          image=img
-          ).grid(column=1, row=0, padx=10, pady=25)
+    # Создаем область для того чтобы поместить туда подготовительные кнопки(выбрать файл,выбрать папку и т.п.)
+    frame_data_template = LabelFrame(tab_template, text='Подготовка')
+    frame_data_template.pack(padx=10, pady=10)
+    # Переключатель:вариант слияния файлов
+    # Создаем переключатель
+    group_rb_type_template = IntVar()
+    # Создаем фрейм для размещения переключателей(pack и грид не используются в одном контейнере)
+    frame_rb_type_template = LabelFrame(frame_data_template, text='1) Выберите вариант разделения')
+    frame_rb_type_template.pack(padx=10, pady=10)
+    #
+    Radiobutton(frame_rb_type_template, text='А) Вариант 1', variable=group_rb_type_template,
+                value=0).pack()
+    Radiobutton(frame_rb_type_template, text='Б) Вариант 2', variable=group_rb_type_template,
+                value=1).pack()
 
-    # Создаем кнопку Выбрать файл с данными
-    btn_choose_data = Button(tab_report_6, text='1) Выберите файлы с данными', font=('Arial Bold', 20),
-                          command=select_files_data_xlsx
-                          )
-    btn_choose_data.grid(column=0, row=2, padx=10, pady=10)
 
-    # Создаем кнопку для выбора папки куда будут генерироваться файлы
 
-    btn_choose_end_folder = Button(tab_report_6, text='2) Выберите конечную папку', font=('Arial Bold', 20),
-                                       command=select_end_folder
-                                       )
-    btn_choose_end_folder.grid(column=0, row=3, padx=10, pady=10)
+    # Создаем кнопку Выбрать файл
 
-    #Создаем кнопку обработки данных
+    btn_template_first = Button(frame_data_template, text='2) Выберите файл с таблицей', font=('Arial Bold', 14),
+                                command=select_singe_file_template_data_xlsx)
+    btn_template_first.pack(padx=10, pady=10)
 
-    btn_proccessing_data = Button(tab_report_6, text='3) Обработать данные', font=('Arial Bold', 20),
-                                       command=processing_data
-                                       )
-    btn_proccessing_data.grid(column=0, row=4, padx=10, pady=10)
+    # Определяем числовую переменную для порядкового номера
+    entry_template_string_data = StringVar()
+    # Описание поля
+    label_template_number_column = Label(frame_data_template,
+                                         text='3) Введите строку')
+    label_template_number_column.pack(padx=10, pady=10)
+    # поле ввода имени листа
+    entry_template_string_data = Entry(frame_data_template, textvariable=entry_template_string_data,
+                                       width=30)
+    entry_template_string_data.pack(ipady=5)
 
+
+    btn_template_choose_end_folder = Button(frame_data_template, text='4) Выберите конечную папку',
+                                            font=('Arial Bold', 14),
+                                            command=select_template_end_folder
+                                            )
+    btn_template_choose_end_folder.pack(padx=10, pady=10)
+
+    # Создаем кнопку слияния
+
+    btn_template_process = Button(tab_template, text='5) Выполнить обработку',
+                                  font=('Arial Bold', 20),
+                                  command=processing_template)
+    btn_template_process.pack(padx=10, pady=10)
+
+
+
+
+
+
+
+
+
+
+    # Создаем виджет для управления полосой прокрутки
+    canvas.create_window((0, 0), window=tab_control, anchor="nw")
+
+    # Конфигурируем холст для обработки скроллинга
+    canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
+    scrollbar.pack(side="right", fill="y")
+
+    # Вешаем событие скроллинга
+    canvas.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    window.bind_class("Entry", "<Button-3><ButtonRelease-3>", show_textmenu)
+    window.bind_class("Entry", "<Control-a>", callback_select_all)
     window.mainloop()
+
+
+
+
+
+
+
+
+
+
